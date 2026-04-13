@@ -13,7 +13,7 @@ ENV PYTHONUNBUFFERED=1
 
 # Disable oneDNN warnings and ensure TF uses CPU optimally
 ENV TF_ENABLE_ONEDNN_OPTS=0
-ENV PORT=8000
+ENV PORT=7860
 
 # Install essential system dependencies (if using regular OpenCV, else headless is fine)
 RUN apt-get update && apt-get install -y \
@@ -32,7 +32,7 @@ RUN pip install --upgrade pip && \
 COPY . /app/
 
 # Expose the API port
-EXPOSE $PORT
+EXPOSE 7860
 
 # Change working directory so uvicorn can resolve "app.main:app"
 WORKDIR /app/backend
