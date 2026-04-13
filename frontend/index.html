@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI MedScan - Medical Image Analysis Platform powered by DenseNet121 for chest X-ray pathology detection">
+    <title>AI MedScan | Medical Image Analysis</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <div class="brand-icon">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <rect x="2" y="2" width="24" height="24" rx="6" stroke="#2563eb" stroke-width="2"/>
+                        <path d="M9 14h10M14 9v10" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <span class="brand-name">AI MedScan</span>
+            </div>
+            <div class="nav-links">
+                <a href="#home" class="nav-link active">Home</a>
+                <a href="#analyze" class="nav-link">Analyze</a>
+                <a href="/api/docs" class="nav-link" target="_blank">API</a>
+            </div>
+            <div class="nav-status">
+                <div class="status-dot" id="systemStatus"></div>
+                <span class="status-text" id="statusText">Connecting...</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <h1 class="hero-title">Chest X-Ray<br><span class="text-blue">Analysis Platform</span></h1>
+            <p class="hero-desc">Upload a chest radiograph for AI-powered pathology detection. Our DenseNet121 model screens for 14 conditions with Grad-CAM visual explanations.</p>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-number">14</span>
+                    <span class="stat-label">Pathologies</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">&lt;2s</span>
+                    <span class="stat-label">Analysis</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">DenseNet</span>
+                    <span class="stat-label">Architecture</span>
+                </div>
+            </div>
+            <a href="#analyze" class="btn-primary" id="ctaAnalyze">
+                <i data-lucide="scan"></i> Start Analysis
+            </a>
+        </div>
+    </section>
+
+    <!-- Analyzer -->
+    <section class="analyzer" id="analyze">
+        <div class="container">
+            <div class="section-title-bar">
+                <h2>Analyze Medical Image</h2>
+                <p>Upload a chest X-ray for comprehensive AI analysis</p>
+            </div>
+
+            <div class="analyzer-grid">
+                <!-- Left: Upload -->
+                <div class="upload-col" id="uploadPanel">
+                    <div class="card upload-card" id="uploadZone">
+                        <div class="upload-inner">
+                            <i data-lucide="upload-cloud" class="upload-icon"></i>
+                            <h3>Upload Chest X-Ray</h3>
+                            <p>Drag & drop or click to select</p>
+                            <span class="upload-hint">JPEG, PNG, BMP, TIFF — Max 50MB</span>
+                        </div>
+                        <input type="file" id="fileInput" accept="image/*" hidden>
+                    </div>
+
+                    <!-- Preview -->
+                    <div class="card preview-card" id="imagePreview" style="display:none;">
+                        <div class="card-header">
+                            <h4><i data-lucide="image"></i> Uploaded Image</h4>
+                            <button class="btn-icon" id="clearImage"><i data-lucide="x"></i></button>
+                        </div>
+                        <div class="preview-body">
+                            <img id="previewImg" alt="Uploaded medical image">
+                        </div>
+                        <div class="preview-info" id="previewInfo"></div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="card controls-card" id="analysisControls" style="display:none;">
+                        <div class="control-row">
+                            <label>CLAHE Enhancement</label>
+                            <label class="toggle">
+                                <input type="checkbox" id="enhanceToggle" checked>
+                                <span class="toggle-track"></span>
+                            </label>
+                        </div>
+                        <div class="control-row">
+                            <label>Heatmap Style</label>
+                            <select id="colormapSelect" class="select-field">
+                                <option value="jet">Jet (Rainbow)</option>
+                                <option value="hot">Hot (Thermal)</option>
+                                <option value="inferno">Inferno</option>
+                                <option value="turbo">Turbo</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary btn-full" id="analyzeBtn">
+                            <i data-lucide="scan"></i> Run Analysis
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right: Results -->
+                <div class="results-col" id="resultsPanel" style="display:none;">
+
+                    <!-- Loading -->
+                    <div class="card loading-card" id="analysisLoading" style="display:none;">
+                        <div class="loading-pipeline">
+                            <div class="pipeline-step" id="step1">
+                                <div class="step-icon"><i data-lucide="image"></i></div>
+                                <div class="step-info">
+                                    <span class="step-name">Preprocessing</span>
+                                    <span class="step-detail">CLAHE Enhancement & Normalization</span>
+                                </div>
+                                <div class="step-status"></div>
+                            </div>
+                            <div class="pipeline-step" id="step2">
+                                <div class="step-icon"><i data-lucide="search"></i></div>
+                                <div class="step-info">
+                                    <span class="step-name">Quality Assessment</span>
+                                    <span class="step-detail">Brightness, Contrast, Sharpness</span>
+                                </div>
+                                <div class="step-status"></div>
+                            </div>
+                            <div class="pipeline-step" id="step3">
+                                <div class="step-icon"><i data-lucide="brain"></i></div>
+                                <div class="step-info">
+                                    <span class="step-name">DenseNet121 Classification</span>
+                                    <span class="step-detail">14 Pathology Detection</span>
+                                </div>
+                                <div class="step-status"></div>
+                            </div>
+                            <div class="pipeline-step" id="step4">
+                                <div class="step-icon"><i data-lucide="eye"></i></div>
+                                <div class="step-info">
+                                    <span class="step-name">Grad-CAM Generation</span>
+                                    <span class="step-detail">Visual Attention Mapping</span>
+                                </div>
+                                <div class="step-status"></div>
+                            </div>
+                            <div class="pipeline-step" id="step5">
+                                <div class="step-icon"><i data-lucide="file-text"></i></div>
+                                <div class="step-info">
+                                    <span class="step-name">Report Generation</span>
+                                    <span class="step-detail">Clinical Report & Differentials</span>
+                                </div>
+                                <div class="step-status"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results -->
+                    <div class="results-content" id="resultsContent" style="display:none;">
+                        
+                        <!-- Header -->
+                        <div class="card result-header-card" id="resultHeader">
+                            <div class="result-id"></div>
+                            <div class="result-time"></div>
+                        </div>
+
+                        <!-- Risk -->
+                        <div class="card risk-card" id="riskCard">
+                            <div class="risk-gauge-container">
+                                <canvas id="riskGauge" width="200" height="120"></canvas>
+                                <div class="risk-score" id="riskScore">0</div>
+                            </div>
+                            <div class="risk-info">
+                                <div class="risk-status" id="riskStatus">Analyzing...</div>
+                                <div class="risk-recommendation" id="riskRecommendation"></div>
+                            </div>
+                        </div>
+
+                        <!-- Tabs -->
+                        <div class="result-tabs">
+                            <button class="tab-btn active" data-tab="heatmaps"><i data-lucide="flame"></i> Heatmaps</button>
+                            <button class="tab-btn" data-tab="findings"><i data-lucide="list"></i> Findings</button>
+                            <button class="tab-btn" data-tab="charts"><i data-lucide="bar-chart-3"></i> Charts</button>
+                            <button class="tab-btn" data-tab="report"><i data-lucide="file-text"></i> Report</button>
+                        </div>
+
+                        <!-- Tab: Heatmaps -->
+                        <div class="tab-content active" id="tab-heatmaps">
+                            <div class="card heatmap-card">
+                                <div class="heatmap-controls">
+                                    <button class="hmap-btn active" data-view="overlay">Overlay</button>
+                                    <button class="hmap-btn" data-view="heatmap">Heatmap</button>
+                                    <button class="hmap-btn" data-view="contours">Contours</button>
+                                    <button class="hmap-btn" data-view="original">Original</button>
+                                </div>
+                                <div class="heatmap-display">
+                                    <img id="heatmapImage" alt="Grad-CAM Heatmap">
+                                    <div class="heatmap-legend">
+                                        <span>Low</span>
+                                        <div class="legend-bar"></div>
+                                        <span>High</span>
+                                    </div>
+                                </div>
+                                <div class="attention-regions" id="attentionRegions"></div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Findings -->
+                        <div class="tab-content" id="tab-findings">
+                            <div class="findings-list" id="findingsList"></div>
+                        </div>
+
+                        <!-- Tab: Charts -->
+                        <div class="tab-content" id="tab-charts">
+                            <div class="charts-row">
+                                <div class="card chart-card">
+                                    <h4>Pathology Confidence Scores</h4>
+                                    <canvas id="confidenceChart"></canvas>
+                                </div>
+                                <div class="card chart-card">
+                                    <h4>Image Quality Metrics</h4>
+                                    <canvas id="qualityChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Report -->
+                        <div class="tab-content" id="tab-report">
+                            <div class="card clinical-report" id="clinicalReport"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-inner">
+                <p class="footer-brand-text"><strong>AI MedScan</strong> — Medical Image Analysis Platform</p>
+                <p class="footer-disclaimer">For research & educational purposes only. Not for clinical diagnosis.</p>
+                <p class="footer-copy">© 2026 AI MedScan. Built for advancing healthcare AI.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

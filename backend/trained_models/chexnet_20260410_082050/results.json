@@ -1,0 +1,54 @@
+{
+  "experiment_name": "chexnet_20260410_082050",
+  "total_training_time_seconds": 587.1,
+  "total_training_time_formatted": "00:09:47",
+  "total_epochs_trained": 8,
+  "best_val_auc": 0.553874671459198,
+  "best_val_loss": 0.14256946742534637,
+  "final_train_loss": 0.11914754658937454,
+  "final_val_loss": 0.14818455278873444,
+  "test_results": {
+    "mean_auroc": 0.5069933118781803,
+    "mean_auprc": 0.3351749745124266,
+    "per_class_auroc": {
+      "Atelectasis": 0.494949494949495,
+      "Cardiomegaly": 0.6470588235294117,
+      "Consolidation": 0.65625,
+      "Edema": 0.6000000000000001,
+      "Effusion": 0.5520833333333333,
+      "Emphysema": 0.8611111111111112,
+      "Fibrosis": 0.0,
+      "Hernia": 0.0,
+      "Infiltration": 0.72,
+      "Mass": 0.38666666666666666,
+      "Nodule": 0.671875,
+      "Pleural Thickening": 0.6111111111111112,
+      "Pneumonia": 0.21052631578947367,
+      "Pneumothorax": 0.6862745098039215
+    },
+    "per_class_auprc": {
+      "Atelectasis": 0.5334802146979649,
+      "Cardiomegaly": 0.49107142857142855,
+      "Consolidation": 0.3666666666666667,
+      "Edema": 0.39417004048582993,
+      "Effusion": 0.6964759222402411,
+      "Emphysema": 0.3666666666666667,
+      "Fibrosis": 0.0,
+      "Hernia": 0.0,
+      "Infiltration": 0.5412698412698413,
+      "Mass": 0.2328134284016637,
+      "Nodule": 0.4025735294117647,
+      "Pleural Thickening": 0.23809523809523808,
+      "Pneumonia": 0.0625,
+      "Pneumothorax": 0.3666666666666667
+    }
+  },
+  "model_path": "trained_models\\chexnet_20260410_082050\\final_model.keras",
+  "config": {
+    "epochs": 10,
+    "initial_lr": 0.001,
+    "loss_type": "weighted_bce",
+    "optimizer": "adam",
+    "two_phase": false
+  }
+}

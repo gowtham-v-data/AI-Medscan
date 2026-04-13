@@ -1,0 +1,44 @@
+{
+  "dataset_type": "real_nih_chest_xray",
+  "source": "NIH Chest X-Ray14 (via MedMNIST)",
+  "total_images": 4200,
+  "image_size": "224x224 (resized from 28x28)",
+  "num_classes": 14,
+  "class_labels": [
+    "Atelectasis",
+    "Cardiomegaly",
+    "Consolidation",
+    "Edema",
+    "Effusion",
+    "Emphysema",
+    "Fibrosis",
+    "Hernia",
+    "Infiltration",
+    "Mass",
+    "Nodule",
+    "Pleural Thickening",
+    "Pneumonia",
+    "Pneumothorax"
+  ],
+  "label_distribution": {
+    "Atelectasis": 449,
+    "Cardiomegaly": 118,
+    "Consolidation": 505,
+    "Edema": 772,
+    "Effusion": 199,
+    "Emphysema": 218,
+    "Fibrosis": 62,
+    "Hernia": 197,
+    "Infiltration": 191,
+    "Mass": 83,
+    "Nodule": 108,
+    "Pleural Thickening": 60,
+    "Pneumonia": 139,
+    "Pneumothorax": 5
+  },
+  "splits": {
+    "train": 3000,
+    "val": 600,
+    "test": 600
+  }
+}

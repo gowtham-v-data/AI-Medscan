@@ -1,0 +1,33 @@
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environment variables
+.env
+.env.local
+
+# Git and IDE
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Development Data
+real_data/
+sample_images/
+*.csv
+dataset_info.json
+
+# Only ignore temporary weights, keep trained_models!
+checkpoint/
+*.ckpt
+
+# Local UI/Logs logs
+*.log

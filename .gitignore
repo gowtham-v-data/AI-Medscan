@@ -1,0 +1,40 @@
+# AI MedScan Environment
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual Environment
+venv/
+env/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ML Models (large files)
+*.h5
+*.hdf5
+*.pb
+*.ckpt*
+trained_models/*.h5
+trained_models/*.pkl
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Temp
+*.tmp
+temp/

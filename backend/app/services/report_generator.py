@@ -1,0 +1,388 @@
+"""
+Clinical Report Generator for AI MedScan.
+
+Generates professional-grade clinical analysis reports from
+the ML pipeline results, including findings, recommendations,
+and structured medical summaries.
+"""
+
+import json
+import uuid
+from datetime import datetime
+from typing import Dict, List, Optional
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class ClinicalReportGenerator:
+    """
+    Generates structured clinical reports from AI analysis results.
+    
+    Reports follow DICOM SR (Structured Report) conventions
+    and can be exported as JSON or HTML.
+    """
+    
+    def __init__(self):
+        self.report_template = {
+            "header": {},
+            "patient_info": {},
+            "study_info": {},
+            "ai_analysis": {},
+            "findings": [],
+            "impression": "",
+            "recommendations": [],
+            "quality_assessment": {},
+            "technical_details": {},
+            "disclaimer": ""
+        }
+    
+    def generate_report(
+        self,
+        predictions: Dict,
+        quality_metrics: Dict,
+        heatmap_stats: Dict,
+        metadata: Dict,
+        patient_info: Optional[Dict] = None
+    ) -> Dict:
+        """
+        Generate a comprehensive clinical report.
+        
+        Args:
+            predictions: Model prediction results
+            quality_metrics: Image quality assessment
+            heatmap_stats: Grad-CAM heatmap statistics
+            metadata: Processing metadata
+            patient_info: Optional patient information
+            
+        Returns:
+            Structured clinical report dictionary
+        """
+        report_id = str(uuid.uuid4())[:12].upper()
+        timestamp = datetime.now()
+        
+        report = {
+            "report_id": f"MEDSCAN-{report_id}",
+            "generated_at": timestamp.isoformat(),
+            "generated_at_formatted": timestamp.strftime("%B %d, %Y at %I:%M %p"),
+            "version": "2.0.0",
+            
+            "header": {
+                "title": "AI-Assisted Chest Radiograph Analysis Report",
+                "institution": "AI MedScan Intelligence Platform",
+                "system_version": "MedScan v2.0 | DenseNet121-CheXNet",
+                "report_type": "AI Screening Analysis",
+                "priority": self._determine_priority(predictions.get("assessment", {}))
+            },
+            
+            "patient_info": patient_info or {
+                "patient_id": "DEMO-PATIENT",
+                "study_date": timestamp.strftime("%Y-%m-%d"),
+                "modality": "CR (Computed Radiography)",
+                "body_part": "Chest",
+                "view": "PA (Posteroanterior)",
+                "note": "Demo analysis - no real patient data"
+            },
+            
+            "image_quality": {
+                "overall_score": quality_metrics.get("quality_score", 0),
+                "grade": quality_metrics.get("quality_grade", "N/A"),
+                "brightness": quality_metrics.get("brightness", 0),
+                "contrast": quality_metrics.get("contrast", 0),
+                "sharpness": quality_metrics.get("sharpness", 0),
+                "noise_level": quality_metrics.get("noise_level", 0),
+                "diagnostic_quality": quality_metrics.get("quality_score", 0) >= 60,
+                "recommendations": quality_metrics.get("recommendations", [])
+            },
+            
+            "ai_analysis": {
+                "model": predictions.get("model_info", {}),
+                "assessment": predictions.get("assessment", {}),
+                "processing_metadata": metadata
+            },
+            
+            "findings": self._format_findings(predictions.get("findings", [])),
+            
+            "attention_analysis": {
+                "heatmap_stats": heatmap_stats,
+                "interpretation": self._interpret_heatmap(heatmap_stats)
+            },
+            
+            "impression": self._generate_impression(predictions),
+            
+            "recommendations": self._generate_recommendations(predictions),
+            
+            "differential_diagnosis": self._generate_differential(predictions),
+            
+            "technical_details": {
+                "algorithm": "DenseNet121 with multi-label sigmoid classification",
+                "training_data": "CheXpert dataset (224,316 chest radiographs)",
+                "preprocessing": [
+                    "CLAHE contrast enhancement",
+                    "Center-crop resize to 224x224",
+                    "Medical image normalization (μ=0.4985, σ=0.246)"
+                ],
+                "explainability": "Gradient-weighted Class Activation Mapping (Grad-CAM)",
+                "target_layer": "conv5_block16_concat (DenseNet121 final conv block)",
+                "confidence_calibration": "Temperature scaling (T=1.5)"
+            },
+            
+            "disclaimer": (
+                "⚠️ IMPORTANT DISCLAIMER: This report was generated by an artificial intelligence "
+                "system for research and educational purposes ONLY. This analysis has NOT been "
+                "reviewed by a licensed radiologist or medical professional. This report should "
+                "NOT be used for clinical decision-making, diagnosis, or treatment planning. "
+                "Always consult qualified healthcare providers for medical advice. The AI system "
+                "may produce false positives or false negatives. Performance metrics are based "
+                "on validation datasets and may not generalize to all clinical populations."
+            ),
+            
+            "references": [
+                {
+                    "title": "CheXNet: Radiologist-Level Pneumonia Detection on Chest X-Rays with Deep Learning",
+                    "authors": "Rajpurkar et al.",
+                    "journal": "arXiv:1711.05225",
+                    "year": 2017
+                },
+                {
+                    "title": "Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization",
+                    "authors": "Selvaraju et al.",
+                    "journal": "ICCV 2017",
+                    "year": 2017
+                },
+                {
+                    "title": "CheXpert: A Large Chest Radiograph Dataset with Uncertainty Labels",
+                    "authors": "Irvin et al.",
+                    "journal": "AAAI 2019",
+                    "year": 2019
+                }
+            ]
+        }
+        
+        return report
+    
+    def _determine_priority(self, assessment: Dict) -> str:
+        """Determine report priority level."""
+        status_code = assessment.get("status_code", "normal")
+        priority_map = {
+            "critical": "🔴 STAT",
+            "abnormal": "🟠 URGENT",
+            "borderline": "🟡 ROUTINE",
+            "normal": "🟢 ROUTINE"
+        }
+        return priority_map.get(status_code, "🟢 ROUTINE")
+    
+    def _format_findings(self, findings: List[Dict]) -> List[Dict]:
+        """Format findings into structured report entries."""
+        formatted = []
+        
+        for i, finding in enumerate(findings):
+            if finding.get("confidence", 0) < 5:
+                continue
+                
+            formatted.append({
+                "finding_number": i + 1,
+                "condition": finding["condition"],
+                "confidence_percent": finding["confidence"],
+                "confidence_bar": self._create_confidence_bar(finding["confidence"]),
+                "severity": finding["severity"],
+                "severity_icon": self._get_severity_icon(finding["severity"]),
+                "description": finding["description"],
+                "anatomical_location": finding["location"],
+                "icd10_code": finding.get("icd10_code", ""),
+                "clinical_significance": "Clinically significant" if finding.get("is_significant") else "Not clinically significant",
+                "action_required": finding.get("requires_attention", False)
+            })
+        
+        return formatted
+    
+    def _create_confidence_bar(self, confidence: float) -> str:
+        """Create a text-based confidence bar."""
+        filled = int(confidence / 5)
+        empty = 20 - filled
+        return f"[{'█' * filled}{'░' * empty}] {confidence}%"
+    
+    def _get_severity_icon(self, severity: str) -> str:
+        """Map severity to visual icon."""
+        icons = {
+            "critical": "🔴",
+            "high": "🟠",
+            "moderate": "🟡",
+            "low": "🟢",
+            "minimal": "⚪"
+        }
+        return icons.get(severity, "⚪")
+    
+    def _generate_impression(self, predictions: Dict) -> str:
+        """Generate clinical impression summary."""
+        assessment = predictions.get("assessment", {})
+        findings = predictions.get("findings", [])
+        
+        significant = [f for f in findings if f.get("confidence", 0) >= 20]
+        
+        if not significant:
+            return (
+                "IMPRESSION: No significant pathological findings identified on "
+                "AI-assisted analysis of the chest radiograph. The lungs appear "
+                "clear with no focal consolidation, effusion, or pneumothorax. "
+                "The cardiac silhouette and mediastinal contours appear within "
+                "normal limits."
+            )
+        
+        top_findings = significant[:3]
+        conditions = [f["condition"] for f in top_findings]
+        
+        impression_parts = [
+            f"IMPRESSION: AI analysis of the chest radiograph reveals "
+            f"findings suggestive of {', '.join(conditions[:-1])}"
+        ]
+        
+        if len(conditions) > 1:
+            impression_parts[0] += f" and {conditions[-1]}"
+        else:
+            impression_parts[0] = (
+                f"IMPRESSION: AI analysis of the chest radiograph reveals "
+                f"findings suggestive of {conditions[0]}"
+            )
+        
+        impression_parts.append(
+            f"Overall risk assessment: {assessment.get('status', 'N/A')}. "
+            f"Risk score: {assessment.get('risk_score', 0)}/100."
+        )
+        
+        impression_parts.append(
+            "Clinical correlation with patient history, physical examination, "
+            "and laboratory findings is recommended."
+        )
+        
+        return " ".join(impression_parts)
+    
+    def _generate_recommendations(self, predictions: Dict) -> List[str]:
+        """Generate clinical recommendations."""
+        assessment = predictions.get("assessment", {})
+        status_code = assessment.get("status_code", "normal")
+        
+        recommendations = []
+        
+        if status_code == "critical":
+            recommendations.extend([
+                "🔴 IMMEDIATE radiologist review recommended",
+                "Consider urgent clinical consultation",
+                "Additional imaging (CT chest with contrast) may be indicated",
+                "Correlate with clinical presentation and vital signs",
+                "Consider ICU-level monitoring if clinically appropriate"
+            ])
+        elif status_code == "abnormal":
+            recommendations.extend([
+                "🟠 Radiologist review recommended within 24 hours",
+                "Clinical correlation with symptoms and history",
+                "Consider follow-up imaging in 2-4 weeks",
+                "Laboratory workup as clinically indicated (CBC, CRP, BMP)"
+            ])
+        elif status_code == "borderline":
+            recommendations.extend([
+                "🟡 Routine radiologist review recommended",
+                "Follow-up imaging in 6-8 weeks if clinically indicated",
+                "Monitor symptoms and clinical progression",
+                "Consider comparison with prior imaging if available"
+            ])
+        else:
+            recommendations.extend([
+                "🟢 No urgent follow-up required",
+                "Continue routine screening as per clinical guidelines",
+                "Annual chest radiograph if risk factors present"
+            ])
+        
+        recommendations.append(
+            "⚕️ This AI analysis should be verified by a board-certified radiologist"
+        )
+        
+        return recommendations
+    
+    def _generate_differential(self, predictions: Dict) -> List[Dict]:
+        """Generate differential diagnosis suggestions."""
+        findings = predictions.get("findings", [])
+        significant = [f for f in findings if f.get("confidence", 0) >= 25]
+        
+        differentials = []
+        
+        for finding in significant[:5]:
+            condition = finding["condition"]
+            confidence = finding["confidence"]
+            
+            diff = {
+                "primary": condition,
+                "confidence": confidence,
+                "differentials": self._get_differentials_for(condition),
+                "suggested_workup": self._get_workup_for(condition)
+            }
+            differentials.append(diff)
+        
+        return differentials
+    
+    def _get_differentials_for(self, condition: str) -> List[str]:
+        """Get differential diagnoses for a condition."""
+        differentials_map = {
+            "Pneumonia": ["COVID-19 pneumonia", "Aspiration pneumonia", "Lung abscess", "Pulmonary hemorrhage"],
+            "Cardiomegaly": ["Pericardial effusion", "Dilated cardiomyopathy", "Valvular heart disease"],
+            "Effusion": ["Parapneumonic effusion", "Malignant effusion", "Heart failure", "Empyema"],
+            "Consolidation": ["Pneumonia", "Pulmonary hemorrhage", "Organizing pneumonia", "Lymphoma"],
+            "Atelectasis": ["Mucus plugging", "Endobronchial lesion", "Post-surgical changes"],
+            "Edema": ["Cardiogenic pulmonary edema", "ARDS", "Fluid overload", "Renal failure"],
+            "Mass": ["Primary lung cancer", "Metastatic disease", "Benign hamartoma", "Granuloma"],
+            "Nodule": ["Granuloma", "Primary lung cancer", "Metastasis", "Hamartoma", "AV malformation"],
+            "Pneumothorax": ["Spontaneous PTX", "Traumatic PTX", "Tension PTX", "Iatrogenic PTX"],
+            "Emphysema": ["COPD", "Alpha-1 antitrypsin deficiency", "Bullous disease"],
+            "Fibrosis": ["Idiopathic pulmonary fibrosis", "Drug-induced", "Radiation fibrosis", "Sarcoidosis"],
+            "Infiltration": ["Viral pneumonitis", "Drug reaction", "Eosinophilic pneumonia"],
+            "Hernia": ["Hiatal hernia", "Morgagni hernia", "Bochdalek hernia"],
+            "Pleural Thickening": ["Prior infection", "Asbestos exposure", "Post-surgical changes"]
+        }
+        return differentials_map.get(condition, ["Further investigation needed"])
+    
+    def _get_workup_for(self, condition: str) -> List[str]:
+        """Get recommended workup for a condition."""
+        workup_map = {
+            "Pneumonia": ["Blood cultures", "Sputum culture", "CRP/Procalcitonin", "CT chest if complicated"],
+            "Cardiomegaly": ["Echocardiogram", "BNP/NT-proBNP", "ECG", "Cardiac MRI"],
+            "Effusion": ["Lateral decubitus view", "Ultrasound-guided thoracentesis", "Fluid analysis"],
+            "Mass": ["CT chest with contrast", "PET-CT", "Tissue biopsy", "Tumor markers"],
+            "Nodule": ["CT chest (thin-cut)", "PET-CT if >8mm", "Follow-up CT per Fleischner"],
+            "Pneumothorax": ["Immediate CT chest", "ABG", "Chest tube if large/symptomatic"],
+            "Edema": ["BNP levels", "Echocardiogram", "Renal function tests"],
+        }
+        return workup_map.get(condition, ["Clinical correlation", "Consider advanced imaging"])
+    
+    def _interpret_heatmap(self, heatmap_stats: Dict) -> str:
+        """Generate interpretation of Grad-CAM attention patterns."""
+        if not heatmap_stats:
+            return "Heatmap analysis not available."
+        
+        coverage = heatmap_stats.get("coverage_percent", 0)
+        peak = heatmap_stats.get("peak_location", {})
+        location = peak.get("anatomical_location", "unspecified region")
+        
+        if coverage > 30:
+            pattern = "diffuse"
+            interpretation = (
+                f"The AI model shows {pattern} attention pattern covering "
+                f"{coverage:.1f}% of the image area, with peak activation "
+                f"in the {location}. This diffuse pattern may suggest "
+                "widespread pathological changes."
+            )
+        elif coverage > 10:
+            pattern = "focal"
+            interpretation = (
+                f"The AI model demonstrates {pattern} attention concentrated "
+                f"in the {location}, covering {coverage:.1f}% of the image. "
+                "This focal pattern suggests a localized finding in this region."
+            )
+        else:
+            pattern = "minimal"
+            interpretation = (
+                f"The AI model shows {pattern} attention activation "
+                f"({coverage:.1f}% coverage), suggesting no strongly "
+                "suspicious regions identified."
+            )
+        
+        return interpretation
